@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2016
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PSS_PGP", "PGP\PSS_PGP.csproj", "{45B506EA-3DE7-4ADC-A162-009C80B18597}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PSS_SFTP", "SFTP\PSS_SFTP.csproj", "{0CB0A2FF-01D9-4450-B600-A44F4521248C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{45B506EA-3DE7-4ADC-A162-009C80B18597}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45B506EA-3DE7-4ADC-A162-009C80B18597}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45B506EA-3DE7-4ADC-A162-009C80B18597}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45B506EA-3DE7-4ADC-A162-009C80B18597}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E08A7731-22B4-4D8D-99B0-338DF0B6E86E}
+	EndGlobalSection
+EndGlobal
