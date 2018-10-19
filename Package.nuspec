@@ -7,7 +7,7 @@
     <owners>Pro Silver Systems LLC</owners>
     <licenseUrl>http://prosilversystems.com</licenseUrl>
     <projectUrl>http://prosilversystems.com</projectUrl>
-    <iconUrl>http://prosilversystems.com</iconUrl>
+    <iconUrl>https://prosilversystems.com/images/PSS_Nuget/PSS_PGP_SFTP_NugetLogo.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Contains libs and nuget packages that make it easy to encrypt and decrypt PGP and sent files Via SFTP</description>
     <releaseNotes>This is release one please send any comments and or requests to the public repo.  Thanks</releaseNotes>
