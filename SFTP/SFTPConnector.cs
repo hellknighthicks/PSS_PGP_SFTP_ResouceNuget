@@ -16,8 +16,9 @@ namespace PSS_SFTP
             _pathFromRoot;
 
         private int _serverPort;
+        private bool _serverConnectionTest;
 
-        public bool ConnectionTestResult { get; set; }
+        public bool ConnectionTestResult { get; private set; }
 
         public List<Exception> ConnectionExceptions { get; private set; }
 
@@ -78,7 +79,6 @@ namespace PSS_SFTP
             finally
             {
                 _serverConnection.Disconnect();
-                ConnectionTestResult = false;
             }
 
             ConnectionTestResult = returnVal;
@@ -93,6 +93,9 @@ namespace PSS_SFTP
         /// <returns>True if it found it or created it.  False if it couldn't find it or create it.</returns>
         public bool CheckForDirectory(bool addTheDirectory = false)
         {
+                //if connection test fails we shouldn't even try this!
+            if (!ConnectionTestResult)
+                return false;
 
             Connect();
 
@@ -176,7 +179,7 @@ namespace PSS_SFTP
         {
             var disconnect = false;
 
-            if (_serverConnection.IsConnected)
+            if (!_serverConnection.IsConnected)
             {
                 Connect();
                 disconnect = true;

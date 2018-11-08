@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PSS_PGP", "PGP\PSS_PGP.cspr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PSS_SFTP", "SFTP\PSS_SFTP.csproj", "{0CB0A2FF-01D9-4450-B600-A44F4521248C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unit_Tests", "Unit_Tests\Unit_Tests.csproj", "{253137FB-FB61-4501-A2EC-0953A067A051}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CB0A2FF-01D9-4450-B600-A44F4521248C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{253137FB-FB61-4501-A2EC-0953A067A051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{253137FB-FB61-4501-A2EC-0953A067A051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{253137FB-FB61-4501-A2EC-0953A067A051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{253137FB-FB61-4501-A2EC-0953A067A051}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

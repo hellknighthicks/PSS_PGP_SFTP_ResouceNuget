@@ -11,7 +11,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Contains libs and nuget packages that make it easy to encrypt and decrypt PGP and sent files Via SFTP</description>
     <releaseNotes>This is release one please send any comments and or requests to the public repo.  Thanks</releaseNotes>
-    <copyright>Copyright 2018</copyright>
+    <copyright>Pro Silver Systems 2018</copyright>
     <tags>PSS PGP SFTP</tags>
     <dependencies>
       <dependency id="BouncyCastle" version="1.8.3.1" />

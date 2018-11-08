@@ -14,6 +14,7 @@ namespace PSS_PGP
     public class PSS_PGPEncrypt
     {
         private static PgpPublicKey _populatedPublicKey;
+        public static bool IsPublicKeyPopulated { get; private set; }
 
         /// <summary>
         /// Takes a File and Encrypts it using the PGP Public Key. 
@@ -75,7 +76,9 @@ namespace PSS_PGP
             {
                 _populatedPublicKey = ReadPublicKey(inputStream);
 
-                return _populatedPublicKey != null;
+                IsPublicKeyPopulated = _populatedPublicKey != null;
+
+                return IsPublicKeyPopulated;
             }
             catch
             {
@@ -83,6 +86,27 @@ namespace PSS_PGP
             }
 
         }
+
+        /// <summary>
+        /// Pass your public key in as a string.
+        /// </summary>
+        /// <param name="PublicKey">Assumes UTF8 Encoding</param>
+        /// <returns></returns>
+        public static bool PopulatePublicKey(string PublicKey)
+        {
+           return PopulatePublicKey(StringToStream(PublicKey));
+        }
+
+        private static MemoryStream StringToStream(string toConvert)
+        {
+            // convert string to stream
+            var byteArray = Encoding.UTF8.GetBytes(toConvert);
+            //byte[] byteArray = Encoding.ASCII.GetBytes(contents);
+            var stream = new MemoryStream(byteArray);
+
+            return stream;
+        }
+
 
         /// <summary>
         /// Opens Key Ring File and loads first available key
