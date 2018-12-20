@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>PSS_PGP_SFTP_ResouceNuget</id>
+    <version>1.0.0</version>
+    <authors>Adam Travis</authors>
+    <owners>Pro Silver Systems LLC</owners>
+    <licenseUrl>http://prosilversystems.com</licenseUrl>
+    <projectUrl>http://prosilversystems.com</projectUrl>
+    <iconUrl>https://www.prosilversystems.com/images/PSS_Nuget/PSS_PGP_SFTP_NugetLogo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+	<summary>DLLs that make PGP encryption easy as well as SFTP File Transmission.  Examples avaliable soon.</summary>
+    <description>Contains libs and nuget packages that make it easy to encrypt and decrypt PGP and sent files Via SFTP</description>
+    <releaseNotes>This is release one please send any comments and or requests to the public repo.  Thanks</releaseNotes>
+    <copyright>Pro Silver Systems 2018</copyright>
+    <tags>PSS PGP SFTP</tags>
+    <dependencies>
+      <dependency id="BouncyCastle" version="1.8.3.1" />
+	  <dependency id="SSH.NET" version="2016.1.0" />
+    </dependencies>
+  </metadata>
+  <files>
+	<file src="PGP\bin\Release\PSS_PGP.dll" target="lib\net452\"/>
+    <file src="SFTP\bin\Release\PSS_SFTP.dll" target="lib\net452\"/>
+  </files>
+  
+</package>
