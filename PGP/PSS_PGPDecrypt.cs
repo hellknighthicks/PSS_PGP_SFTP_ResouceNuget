@@ -1,151 +1,246 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Org.BouncyCastle.Bcpg;
+using System.Reflection;
 using Org.BouncyCastle.Bcpg.OpenPgp;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities.IO;
 
 namespace PSS_PGP
 {
     public class PSS_PGPDecrypt
     {
-        public static void DecryptFile(string inputFileName,string keyFileName,char[] passwd, string outputFileName = "Decrypted.txt")
+
+        private static string _privateKey, _password;
+
+        private const string
+            DefaultFileName = "Decrypted.txt",
+            PrivateKeyNotPopulatedText =
+                "If your aren't passing a private key you must populate one prior to calling this method.";
+        /// <summary>
+        /// Used to allow the viewing and processing of log data of the package.
+        /// </summary>
+        public static List<string> EventLog = new List<string>();
+
+        public static bool PrivateKeyPopulated => !string.IsNullOrWhiteSpace(_privateKey);
+
+        public static bool PopulatedPrivateKeyAndPassword(string privateKey,string password = "")
         {
+            if(string.IsNullOrWhiteSpace(privateKey))
+            { throw new ArgumentException("You must defile a privateKey");}
+
+            _privateKey = privateKey;
+            _password = password;
+
+            return PrivateKeyPopulated;
+        }
+
+        public static void DecryptFileAndOutputToFile(string inputFileName, string keyFileName, string password, string outputFileName = DefaultFileName)
+        {
+            if(string.IsNullOrWhiteSpace(inputFileName))
+                throw new ArgumentNullException(nameof(inputFileName));
+            if(string.IsNullOrWhiteSpace(keyFileName))
+                throw new ArgumentNullException(nameof(keyFileName));
+
             using (Stream input = File.OpenRead(inputFileName),
                    keyIn = File.OpenRead(keyFileName))
             {
-                DecryptFile(input, keyIn, passwd, outputFileName);
+                DecryptFileAndOutputToFile(input, keyIn, password, outputFileName);
             }
         }
 
-        public static void DecryptFile(Stream inputStream,Stream keyIn,char[] passwd,string defaultFileName)
+        public static void DecryptFileAndOutputToFile(Stream inputStream, Stream keyIn, string password, string outFileName = DefaultFileName)
         {
-            inputStream = PgpUtilities.GetDecoderStream(inputStream);
+            if(inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+            if(keyIn == null)
+                throw new ArgumentNullException(nameof(keyIn));
 
+            if (string.IsNullOrWhiteSpace(outFileName))
+            {
+                throw new ArgumentNullException(nameof(outFileName));
+            }
+
+                Stream fOut = File.Create(outFileName);
+                Streams.PipeAll(DecryptStream(inputStream, keyIn, password), fOut);
+                fOut.Close();
+        }
+
+        public static void DecryptFileAndOutPutToFile(Stream inputStream, string outputFileName = DefaultFileName)
+        {
+            if (inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+            if (!PrivateKeyPopulated)
+                throw new Exception(PrivateKeyNotPopulatedText);
+
+            Stream fOut = File.Create(outputFileName);
+            Streams.PipeAll(DecryptStream(inputStream, PSS_PGPEncrypt.StringToStream(_privateKey), _password), fOut);
+            fOut.Close();
+        }
+
+        /// <summary>
+        /// The simplest and best way to Decrypt a stream
+        /// Make sure you've populated PSSPGPDecrypt.PrivateKey(STRING) and Password(Optional)
+        /// </summary>
+        /// <param name="inputStream"></param>
+        /// <returns>A Decrypted String</returns>
+        public static Stream DecryptStream(Stream inputStream)
+        {
+            if (inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+            if (!PrivateKeyPopulated)
+                throw new Exception(PrivateKeyNotPopulatedText);
+
+            using (var privateKeyStream = PSS_PGPEncrypt.StringToStream(_privateKey))
+            {
+                return DecryptStream(inputStream, privateKeyStream, _password);
+            }
+        }
+
+        public static Stream DecryptStream(Stream inputStream, string keyFileName, string password)
+        {
+            if(inputStream==null)
+                throw new ArgumentNullException(nameof(inputStream));
+            if(string.IsNullOrWhiteSpace(keyFileName))
+                throw new ArgumentNullException(nameof(keyFileName));
+
+            using (Stream keyIn = File.OpenRead(keyFileName))
+            {
+                return DecryptStream(inputStream, keyIn, password);
+            }
+        }
+
+        public static Stream DecryptStream(Stream inputStream, Stream keyIn, string password)
+        {
+            EventLog.Clear();
+
+            if(inputStream == null)
+                throw new ArgumentNullException(nameof(inputStream));
+            if(keyIn==null)
+                throw new ArgumentNullException(nameof(keyIn));
+
+            inputStream = PgpUtilities.GetDecoderStream(inputStream);
+            Stream decryptedStream;
             try
             {
-                PgpObjectFactory pgpF = new PgpObjectFactory(inputStream);
-                PgpEncryptedDataList enc;
 
-                PgpObject o = pgpF.NextPgpObject();
-                //
-                // the first object might be a PGP marker packet.
-                //
-                if (o is PgpEncryptedDataList)
+                var objectFactory = new PgpObjectFactory(inputStream);
+
+                PgpEncryptedDataList encryptedDataList;
+
+                var pgpObject = objectFactory.NextPgpObject();
+
+                // First object may be a PGP marker packet.  If so skip it.
+
+                if (pgpObject is PgpEncryptedDataList list)
                 {
-                    enc = (PgpEncryptedDataList)o;
+                    encryptedDataList = list;
                 }
                 else
                 {
-                    enc = (PgpEncryptedDataList)pgpF.NextPgpObject();
+                    encryptedDataList = (PgpEncryptedDataList) objectFactory.NextPgpObject();
                 }
 
-                //
-                // find the secret key
-                //
-                PgpPrivateKey sKey = null;
-                PgpPublicKeyEncryptedData pbe = null;
-                PgpSecretKeyRingBundle pgpSec = new PgpSecretKeyRingBundle(
-                    PgpUtilities.GetDecoderStream(keyIn));
+                if (encryptedDataList == null)
+                    throw new Exception("Cannot read encrypted data from input!!!  Unable to find PGP Data.  Are you sure this is encrypted?");
 
-                foreach (PgpPublicKeyEncryptedData pked in enc.GetEncryptedDataObjects())
+
+                // Find secret key
+
+                PgpPrivateKey privateKey = null;
+
+                PgpPublicKeyEncryptedData encryptedData = null;
+
+                var pgpSec = new PgpSecretKeyRingBundle(PgpUtilities.GetDecoderStream(keyIn));
+
+                foreach (PgpPublicKeyEncryptedData item in encryptedDataList.GetEncryptedDataObjects())
                 {
-                    sKey = FindSecretKey(pgpSec, pked.KeyId, passwd);
+                    privateKey = FindSecretKey(pgpSec, item.KeyId, password.ToCharArray());
 
-                    if (sKey != null)
-                    {
-                        pbe = pked;
-                        break;
-                    }
+                    if (privateKey == null) continue;
+
+                    encryptedData = item;
+                    break;
                 }
 
-                if (sKey == null)
+                if (privateKey == null)
                 {
-                    throw new ArgumentException("secret key for message not found.");
+                    throw new ArgumentException("Unable to Decrypt - A Secret key for the message was not found.");
                 }
 
-                Stream clear = pbe.GetDataStream(sKey);
+                var clear = encryptedData.GetDataStream(privateKey);
 
-                PgpObjectFactory plainFact = new PgpObjectFactory(clear);
+                var plainFact = new PgpObjectFactory(clear);
 
-                PgpObject message = plainFact.NextPgpObject();
+                var message = plainFact.NextPgpObject();
 
-                if (message is PgpCompressedData)
+                if (message is PgpCompressedData cData)
                 {
-                    PgpCompressedData cData = (PgpCompressedData)message;
-                    PgpObjectFactory pgpFact = new PgpObjectFactory(cData.GetDataStream());
+                    var pgpFact = new PgpObjectFactory(cData.GetDataStream());
 
                     message = pgpFact.NextPgpObject();
                 }
 
-                if (message is PgpLiteralData)
+                switch (message)
                 {
-                    PgpLiteralData ld = (PgpLiteralData)message;
-
-                    string outFileName = defaultFileName;
-                    if (outFileName.Length == 0)
-                    {
-                        outFileName = defaultFileName;
-                    }
-
-                    Stream fOut = File.Create(outFileName);
-                    Stream unc = ld.GetInputStream();
-                    Streams.PipeAll(unc, fOut);
-                    fOut.Close();
+                    case PgpLiteralData ld:
+                        decryptedStream = ld.GetInputStream();
+                        break;
+                    case PgpOnePassSignatureList _:
+                        throw new PgpException("The encrypted message contains a signed message - not literal data.");
+                    default:
+                        throw new PgpException("The message is not a simple encrypted file - type unknown.");
                 }
-                else if (message is PgpOnePassSignatureList)
+
+                if (encryptedData.IsIntegrityProtected())
                 {
-                    throw new PgpException("encrypted message contains a signed message - not literal data.");
+                    EventLog.Add(!encryptedData.Verify()
+                        ? "Message Failed integrity check!!!"
+                        : "Message Passed the integrity check.");
                 }
                 else
                 {
-                    throw new PgpException("message is not a simple encrypted file - type unknown.");
-                }
+                    EventLog.Add("There was no integrity check");
 
-                if (pbe.IsIntegrityProtected())
-                {
-                    if (!pbe.Verify())
-                    {
-                        Console.Error.WriteLine("message failed integrity check");
-                    }
-                    else
-                    {
-                        Console.Error.WriteLine("message integrity check passed");
-                    }
-                }
-                else
-                {
-                    Console.Error.WriteLine("no message integrity check");
                 }
             }
             catch (PgpException e)
             {
-                Console.Error.WriteLine(e);
+                throw (Exception) e;
+                //Console.Error.WriteLine(e);
 
-                Exception underlyingException = e.InnerException;
-                if (underlyingException != null)
-                {
-                    Console.Error.WriteLine(underlyingException.Message);
-                    Console.Error.WriteLine(underlyingException.StackTrace);
-                }
+                //if (e.InnerException != null)
+                //{
+                //    Console.Error.WriteLine(e.InnerException.Message);
+                //    Console.Error.WriteLine(e.InnerException.StackTrace);
+                //}
             }
+
+            return decryptedStream;
         }
+
+        /// <summary>
+        /// It doesn't get any simpler than this.  Toss a PGP encrypted string in and get the unencrypted string out. 
+        /// Make sure they PrivateKey and Password (If you have one) are populated
+        /// </summary>
+        /// <param name="encryptedString">Your PGP Encrypted String</param>
+        /// <returns>Unencrypted String</returns>
+        //public static string DecryptString(string encryptedString)
+        //{
+        //    if(string.IsNullOrWhiteSpace(encryptedString))
+        //        throw new ArgumentNullException(nameof(encryptedString));
+
+        //    using (var stream = PSS_PGPEncrypt.StringToStream(encryptedString))
+        //    {
+        //        return PSS_PGPEncrypt.StreamToString(DecryptStream(stream));
+        //    }
+
+        //}
 
         private static PgpPrivateKey FindSecretKey(PgpSecretKeyRingBundle pgpSec, long keyID, char[] pass)
         {
-            PgpSecretKey pgpSecKey = pgpSec.GetSecretKey(keyID);
+            var pgpSecKey = pgpSec.GetSecretKey(keyID);
 
-            if (pgpSecKey == null)
-            {
-                return null;
-            }
-
-            return pgpSecKey.ExtractPrivateKey(pass);
+            return pgpSecKey?.ExtractPrivateKey(pass);
         }
     }
 }

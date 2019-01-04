@@ -1,9 +1,9 @@
 ﻿using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities.IO;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace PSS_PGP
@@ -14,6 +14,8 @@ namespace PSS_PGP
     public class PSS_PGPEncrypt
     {
         private static PgpPublicKey _populatedPublicKey;
+        private static string PublicKeyNotPopulatedText = "Public Key must be populated before calling this method.";
+
         public static bool IsPublicKeyPopulated { get; private set; }
 
         /// <summary>
@@ -22,7 +24,7 @@ namespace PSS_PGP
         /// </summary>
         /// <param name="inputStream"></param>
         /// <returns></returns>
-        public static bool PopulatePublicKey( Stream inputStream)
+        public static bool PopulatePublicKey( Stream inputStream )
         {
 
             try
@@ -35,6 +37,7 @@ namespace PSS_PGP
             }
             catch
             {
+                IsPublicKeyPopulated = false;
                 return false;
             }
 
@@ -43,11 +46,11 @@ namespace PSS_PGP
         /// <summary>
         /// Pass your public key in as a string.
         /// </summary>
-        /// <param name="PublicKey">Assumes UTF8 Encoding</param>
+        /// <param name="publicKey">Assumes UTF8 Encoding</param>
         /// <returns></returns>
-        public static bool PopulatePublicKey(string PublicKey)
+        public static bool PopulatePublicKey(string publicKey)
         {
-           return PopulatePublicKey(StringToStream(PublicKey));
+           return PopulatePublicKey(StringToStream(publicKey));
         }
 
         /// <summary>
@@ -60,7 +63,7 @@ namespace PSS_PGP
 
             inputStream = PgpUtilities.GetDecoderStream(inputStream);
 
-            PgpPublicKeyRingBundle pgpPub = new PgpPublicKeyRingBundle(inputStream);
+            var pgpPub = new PgpPublicKeyRingBundle(inputStream);
 
             // iterate through the key rings.
             foreach (PgpPublicKeyRing kRing in pgpPub.GetKeyRings())
@@ -76,23 +79,47 @@ namespace PSS_PGP
         }
 
 
-        public static byte[] EncryptBytes(string inputstring, bool withIntegrityCheck, bool armor = false)
+        public static byte[] EncryptBytes(string inputString, bool withIntegrityCheck = true, bool armor = false)
         {
-            return EncryptBytes(Encoding.ASCII.GetBytes(inputstring), withIntegrityCheck, armor);
+            if(string.IsNullOrWhiteSpace(inputString))
+                throw new Exception("inputString must be populated.");
+
+            if (!IsPublicKeyPopulated)
+                throw new Exception(PublicKeyNotPopulatedText);
+
+            return EncryptBytes(Encoding.ASCII.GetBytes(inputString), withIntegrityCheck, armor);
+        }
+
+        public static string EncryptString(string inputString, bool withIntegrityCheck = true, bool armor = false)
+        {
+            if (string.IsNullOrWhiteSpace(inputString))
+                throw new ArgumentNullException(nameof(inputString));
+
+            if (!IsPublicKeyPopulated)
+                throw new Exception(PublicKeyNotPopulatedText);
+
+            using (Stream stream =
+                new MemoryStream(EncryptBytes(StringToStream(inputString).ToArray(), withIntegrityCheck, armor)))
+            {
+                return StreamToString(stream);
+            }
         }
 
         /// <summary>
-        /// This method allows for reuse without passing the key every time.  
+        /// This method allows for encryption without passing the private_key use.  
         /// However it will throw an error if the PopulatedPublicKey is not set before calling.
         /// </summary>
         /// <param name="inputData">byte array to encrypt</param>
         /// <param name="withIntegrityCheck">check the data for errors</param>
         /// <param name="armor">protect the data streams</param>
         /// <returns></returns>
-        public static byte[] EncryptBytes(byte[] inputData, bool withIntegrityCheck, bool armor = false)
+        public static byte[] EncryptBytes(byte[] inputData, bool withIntegrityCheck = true, bool armor = false)
         {
-            if(!IsPublicKeyPopulated)
-            { throw new ArgumentNullException("Public Key Must Be Populated before Encrypting!!!!!"); }
+            if(!(inputData.Length>0))
+                throw new Exception("Must have more Bytes than that.");
+
+            if (!IsPublicKeyPopulated)
+                throw new Exception(PublicKeyNotPopulatedText);
 
             var processedData = CompressBytes(inputData, PgpLiteralData.Console, CompressionAlgorithmTag.Uncompressed);
 
@@ -108,10 +135,9 @@ namespace PSS_PGP
                 {
                     try
                     {
-                        if (!armor)
-                        { return EncryptNonArmored(processedData, bOut, output, encGen); }
-
-                         return EncryptArmored(processedData, bOut, output, encGen); 
+                        return !armor ? 
+                            EncryptNonArmored(processedData, bOut, output, encGen) : 
+                            EncryptArmored(processedData, bOut, output, encGen);
                     }
                     catch (Exception e)
                     {
@@ -149,9 +175,20 @@ namespace PSS_PGP
         /// <param name="inputFile">File you wish to encrypt</param>
         /// <param name="outputFile">File name to output too</param>
         /// <param name="armor">Armor or Not to Armor the stream during encryption</param>
-        /// <param name="integrityCheck"></param>
-        public static void EncryptFile(FileInfo inputFile, string outputFile, bool armor = false, bool integrityCheck = true)
+        /// <param name="integrityCheck">Adds a PGP check bit to insure the integrity of the data</param>
+        public static void EncryptFile(FileInfo inputFile, string outputFile ="Encrypted.txt", bool armor = true, bool integrityCheck = true)
         {
+            #region inputValidation
+            if (inputFile == null)
+                throw new ArgumentNullException(nameof(inputFile));
+
+            if (string.IsNullOrWhiteSpace(outputFile))
+                throw new ArgumentNullException(nameof(outputFile));
+
+            if (!IsPublicKeyPopulated)
+                throw new Exception(PublicKeyNotPopulatedText);
+            #endregion
+
 
             using (var outputBytes = new MemoryStream())
             {
@@ -189,6 +226,33 @@ namespace PSS_PGP
             }
         }
 
+        /// <summary>
+        /// Converts a string to a steam
+        /// </summary>
+        /// <param name="toConvert"></param>
+        /// <returns></returns>
+        public static MemoryStream StringToStream(string toConvert)
+        {
+            // convert string to stream
+            var byteArray = Encoding.Default.GetBytes(toConvert);
+            //byte[] byteArray = Encoding.ASCII.GetBytes(contents);
+            var stream = new MemoryStream(byteArray);
+
+            return stream;
+        }
+
+        /// <summary>
+        /// Converts a stream to a regular old stream
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        public static string StreamToString(Stream stream)
+        {
+            var reader = new StreamReader(stream);
+
+            return reader.ReadToEnd();
+        }
+
         private static void WriteStream(Stream inputStream, ref byte[] dataBytes)
         {
             using (var outputStream = inputStream)
@@ -215,7 +279,6 @@ namespace PSS_PGP
                 {
                     var literalData = new PgpLiteralDataGenerator();
 
-                    // Im not sure if we want to use these features.  But compression might be useful.  It removes un-needed data.
                     try
                     {
                         using (var pOut = literalData.Open(compressedOutput, PgpLiteralData.Binary, fileName, clearData.Length, DateTime.UtcNow))
@@ -225,7 +288,7 @@ namespace PSS_PGP
                             return bytesOut.ToArray();
                         }
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         throw new Exception("Unable to Compress", e);
                     }
@@ -234,23 +297,14 @@ namespace PSS_PGP
             }
         }
 
-        public static MemoryStream StringToStream(string toConvert)
-        {
-            // convert string to stream
-            var byteArray = Encoding.Default.GetBytes(toConvert);
-            //byte[] byteArray = Encoding.ASCII.GetBytes(contents);
-            var stream = new MemoryStream(byteArray);
+        //ToDo: Fix it or Kill it.
+        //public static void CheckInputForNull<T>(T param)
+        //{
+        //    if (param ==null)
+        //        throw new NullReferenceException(nameof(T));
+        //    if (typeof(T) == string)
 
-            return stream;
-        }
 
-        public static string StreamToString(Stream stream)
-        {
-            stream.Position = 0;
-            using (var reader = new StreamReader(stream, Encoding.Default))
-            {
-                return reader.ReadToEnd();
-            }
-        }
+        //}
     }
 }
