@@ -1,16 +1,16 @@
 ﻿using System;
 using System.IO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using PSS_PGP;
 
 namespace Unit_Tests.PGP
 {
-    [TestClass]
-    [TestCategory("PGP-Encrypt - Unit Tests")]
+    [TestFixture]
+    [Category("PGP-Encrypt - Unit Tests")]
     public class PGPEncrypt_Unit_Tests
     {
 
-        [TestMethod]
+        [Test]
         public void PGPDecrypt_DecryptFile_EmptyInputFileName_ThrowsException()
         {
        
@@ -24,7 +24,7 @@ namespace Unit_Tests.PGP
             }
         }
 
-        [TestMethod]
+        [Test]
         public void PGPDecrypt_DecryptFile_EmptyKeyFileName_ThrowsException()
         {
 
@@ -38,7 +38,7 @@ namespace Unit_Tests.PGP
             }
         }
 
-        [TestMethod]
+        [Test]
         public void PGPDecrypt_DecryptFile_EmptyInputStream_ThrowsException()
         {
 
@@ -55,7 +55,7 @@ namespace Unit_Tests.PGP
             }
         }
 
-        [TestMethod]
+        [Test]
         public void PGPDecrypt_DecryptFile_EmptyKeyInStream_ThrowsException()
         {
 

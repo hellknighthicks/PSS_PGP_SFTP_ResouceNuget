@@ -1,17 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using PSS_PGP;
 using Unit_Tests.PGP.Resource;
 
 namespace Unit_Tests.PGP
 {
-    [TestClass]
-    [TestCategory("PGP-Decrypt - Unit Tests")]
+    [TestFixture]
+    [Category("PGP-Decrypt - Unit Tests")]
     public class PGPDecrypt_Unit_Tests
     {
 
-        [TestMethod]
+        [Test]
         public void PGPEncrypt_PopulateKey_FromString_Works()
         {
             var success = PSS_PGPEncrypt.PopulatePublicKey(PGP_Test_Variables.PublicKey);
@@ -19,7 +19,7 @@ namespace Unit_Tests.PGP
             Assert.IsTrue(success, "Failed to populate Public Key from String!!!!");
             Assert.IsTrue(PSS_PGPEncrypt.IsPublicKeyPopulated, "PSS_PGPEncrypt.IsPublicKeyPopulated Should be TRUE and isn't!!");
         }
-        [TestMethod]
+        [Test]
         public void PGPEncrypt_PopulateBadKey_FromString_Fails()
         {
 
@@ -29,7 +29,7 @@ namespace Unit_Tests.PGP
             Assert.IsFalse(PSS_PGPEncrypt.IsPublicKeyPopulated, "PSS_PGPEncrypt.IsPublicKeyPopulated Should be FALSE and isn't!!");
         }
 
-        [TestMethod]
+        [Test]
         public void PGPEncrypt_PopulateGoodKeyThenPopulateBadKey_FromString_Fails()
         {
             //Populate a good key
@@ -42,7 +42,7 @@ namespace Unit_Tests.PGP
             Assert.IsFalse(PSS_PGPEncrypt.IsPublicKeyPopulated, "PSS_PGPEncrypt.IsPublicKeyPopulated Should be FALSE and isn't!!");
         }
 
-        [TestMethod]
+        [Test]
         public void PGPEncrypt_Encrypt_Encrypts()
         {
             var success = PSS_PGPEncrypt.PopulatePublicKey(PGP_Test_Variables.PublicKey);
@@ -58,7 +58,7 @@ namespace Unit_Tests.PGP
             Assert.IsFalse(encryptedString.Contains(test_string));
         }
 
-        [TestMethod]
+        [Test]
         public void PGPEncrypt_StringToStream_StreamToStream_Works()
         {
             var testString = "Did I live?";

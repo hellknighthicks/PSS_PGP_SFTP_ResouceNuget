@@ -1,12 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using NUnit.Framework;
 using PSS_SFTP;
 
 namespace Unit_Tests.SFTP
 {
-    [TestClass]
+    [TestFixture]
     public class SFTP_Functional_ConnectionTests
     {
-        [TestMethod, TestCategory("SFTP-Functional Connection Tests")]
+        [Test, Category("SFTP-Functional Connection Tests")]
         public void FtpConnector_ConnectionTestUnSuccessful_ReturnsFalse()
         {
             //Honestly not letting this get to the real network for this test would be ideal..  We need a Mock or Shim
@@ -15,10 +15,10 @@ namespace Unit_Tests.SFTP
 
             Assert.IsFalse(ftpObject.ConnectionTestResult, "Connection to Fake Server Returned TRUE!!!! And it shouldn't have.");
             Assert.AreEqual(ftpObject.ConnectionExceptions.Count,1,"Connection to Fake Server should only Produce 1 Exception.");
-            Assert.AreEqual(ftpObject.ConnectionExceptions[0].Message, "No such host is known","Host Connection Exception string mismatch.");
+            Assert.AreEqual(ftpObject.ConnectionExceptions[0].Message, "One or more errors occurred. (No such host is known.)","Host Connection Exception string mismatch.");
         }
 
-        [TestMethod, TestCategory("SFTP-Functional Connection Tests")]
+        [Test, Category("SFTP-Functional Connection Tests")]
         public void FtpConnector_ConnectionTestSuccessful_ReturnsTrue()
         {
 

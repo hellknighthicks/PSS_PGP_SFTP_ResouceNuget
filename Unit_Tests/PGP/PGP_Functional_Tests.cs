@@ -1,16 +1,16 @@
 ﻿using System.IO;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using PSS_PGP;
 using Unit_Tests.PGP.Resource;
 
 namespace Unit_Tests.PGP
 {
-    [TestClass]
-    [TestCategory("PGP-Functional Tests")]
+    [TestFixture]
+    [Category("PGP-Functional Tests")]
     public class PGP_Functional_Tests
     {
 
-        [TestMethod]
+        [Test]
         public void PGPEncryptDecryptFile_Works_Full_Pass()
         {
 
@@ -80,7 +80,7 @@ namespace Unit_Tests.PGP
 
         }
 
-        [TestMethod]
+        [Test]
         public void PGPEncryptDecryptFileStream_Works_Full_Pass()
         {
 
